@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tarik Tambang Kuis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  /* ---------- Token ---------- */
+  :root { --ease: cubic-bezier(.22, 1, .36, 1); }
+  html[data-theme="dark"] {
+    --bg: #161513; --deep: #12110f; --card: #1c1a18; --raised: #262421;
+    --text: #efe9de; --text-2: #aaa398; --muted: #8a847a;
+    --line: rgba(239,233,222,.10); --line-2: rgba(239,233,222,.20);
+    --accent: #e0a93b; --accent-text: #e0a93b; --on-accent: #1b1305;
+    --p1: #6fb0ea; --p1-soft: rgba(111,176,234,.12);
+    --p2: #f08468; --p2-soft: rgba(240,132,104,.12);
+    --good: #4cc38a; --bad: #ef6a6e; --scrim: rgba(8,7,6,.74);
+    --ground: #211f1c; --rope: #c9a56a; --rope-dark: #7a5f33;
+    color-scheme: dark;
+  }
+  html[data-theme="light"] {
+    --bg: #f7f4ee; --deep: #efe9df; --card: #fdfbf7; --raised: #f1ebe0;
+    --text: #1f1b16; --text-2: #5e554a; --muted: #6f665a;
+    --line: rgba(31,27,22,.10); --line-2: rgba(31,27,22,.22);
+    --accent: #d9a02b; --accent-text: #8f6200; --on-accent: #1b1305;
+    --p1: #1f6fb8; --p1-soft: rgba(31,111,184,.09);
+    --p2: #c2410c; --p2-soft: rgba(194,65,12,.09);
+    --good: #15803d; --bad: #dc2626; --scrim: rgba(31,27,22,.5);
+    --ground: #e9e2d4; --rope: #a9824a; --rope-dark: #6f5430;
+    color-scheme: light;
+  }
+
+  /* ---------- Dasar ---------- */
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 15px; line-height: 1.45;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color .2s var(--ease), color .2s var(--ease);
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:disabled { cursor: default; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .hidden { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .p1 { --c: var(--p1); --c-soft: var(--p1-soft); }
+  .p2 { --c: var(--p2); --c-soft: var(--p2-soft); }
+
+  .app { min-height: 100%; display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; }
+
+  /* ---------- Bilah atas ---------- */
+  .top { display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 8px 24px; background: var(--deep); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; white-space: nowrap; }
+  .brand svg { width: 26px; height: 26px; }
+  .steps { display: flex; align-items: center; gap: 4px; margin: 0 auto; }
+  .step { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 6px; border-radius: 10px; color: var(--muted); border: 1px solid transparent; font-weight: 500; white-space: nowrap; transition: background-color .15s var(--ease), color .15s var(--ease); }
+  .step .n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; border: 1px solid var(--line-2); }
+  .step.now { background: var(--raised); border-color: var(--line-2); color: var(--text); }
+  .step.now .n { background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+  .step.done { color: var(--good); }
+  .step.done .n { border-color: var(--good); }
+  .step .i { width: 14px; height: 14px; stroke-width: 2.25; }
+  .sep { width: 16px; height: 1px; background: var(--line-2); }
+  .tools { display: flex; gap: 4px; }
+  .tool { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; color: var(--text-2); transition: background-color .15s var(--ease), color .15s var(--ease), transform .12s var(--ease); }
+  .tool:hover { background: var(--raised); color: var(--text); }
+  .tool:active { transform: scale(.96); }
+  .tool.on { color: var(--accent-text); }
+
+  /* ---------- Isi ---------- */
+  main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+
+  .arena { overflow: hidden; }
+  .hud { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 12px 24px; }
+  .score { display: flex; flex-direction: column; gap: 2px; color: var(--c); }
+  .score.p2 { align-items: flex-end; }
+  .score small { font-size: 13px; font-weight: 500; }
+  .score b { font-size: 34px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .timer { position: relative; width: 64px; height: 64px; display: grid; place-items: center; }
+  .timer svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .timer circle { fill: none; stroke-width: 5; }
+  .timer .trk { stroke: var(--line-2); }
+  .timer .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke .2s var(--ease); }
+  .timer.low .arc { stroke: var(--bad); }
+  .timer span { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .timer.low span { color: var(--bad); }
+  .tsub { height: 14px; font-size: 11px; line-height: 14px; color: var(--accent-text); }
+
+  .canvas-wrap { position: relative; width: 100%; height: clamp(190px, 28vh, 250px); }
+  .canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+  .lock { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line-2); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .lock .i { width: 14px; height: 14px; color: var(--accent-text); }
+
+  .feed { min-height: 44px; padding: 10px 24px; display: flex; align-items: center; justify-content: center; text-align: center; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-2); transition: color .2s var(--ease); }
+  .feed.hit { color: var(--text); font-weight: 500; }
+
+  .q { padding: 16px 24px 20px; text-align: center; }
+  .q-meta { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 13px; color: var(--text-2); font-weight: 500; }
+  .pips { display: flex; gap: 4px; }
+  .pip { width: 20px; height: 4px; border-radius: 2px; background: var(--line-2); }
+  .pip.done { background: var(--accent); }
+  .pip.now { background: var(--text); }
+  .q h2 { margin: 10px auto 0; max-width: 820px; font-size: clamp(21px, 2.7vw, 30px); font-weight: 500; line-height: 1.3; }
+
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { padding: 12px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; }
+  .panel-head h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; }
+  .panel-head h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .status { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; background: var(--raised); border: 1px solid var(--line); font-size: 12px; font-weight: 500; color: var(--text-2); font-family: 'JetBrains Mono', monospace; }
+  .status .i { width: 12px; height: 12px; stroke-width: 2.25; }
+  .status.on { color: var(--c); border-color: var(--c); }
+  .status.good { color: var(--good); border-color: var(--good); }
+  .status.bad { color: var(--bad); border-color: var(--bad); }
+
+  .opts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .opt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 88px; padding: 10px 6px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); text-align: center; font-size: 15px; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; transition: background-color .15s var(--ease), border-color .15s var(--ease), opacity .15s var(--ease), transform .12s var(--ease); }
+  .opt:hover:not(:disabled) { border-color: var(--c); }
+  .opt:active:not(:disabled) { transform: scale(.98); }
+  .key { min-width: 26px; height: 26px; padding: 0 6px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; background: var(--card); color: var(--c); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .opt.picked { border-color: var(--c); background: var(--c-soft); }
+  .opt.dim { opacity: .45; }
+  .opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 18%, transparent); opacity: 1; }
+  .opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 18%, transparent); opacity: 1; }
+
+  /* ---------- Tombol & lapisan ---------- */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 10px; font-weight: 500; background: var(--raised); border: 1px solid var(--line-2); transition: background-color .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease); }
+  .btn:hover:not(:disabled) { border-color: var(--text-2); }
+  .btn:active:not(:disabled) { transform: scale(.98); }
+  .btn:disabled { opacity: .4; }
+  .btn.primary { background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.07); }
+  .btn.wide { width: 100%; }
+  .icon-btn { width: 44px; height: 44px; padding: 0; }
+
+  .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: var(--scrim); }
+  .sheet { width: 100%; max-width: 480px; padding: 24px; background: var(--card); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.28); animation: rise .3s var(--ease) both; }
+  .sheet.center { text-align: center; }
+  .sheet h2 { font-size: 28px; font-weight: 500; line-height: 1.15; }
+  .sub { margin-top: 6px; color: var(--text-2); font-size: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--text-2); }
+  .chip.good { color: var(--good); border-color: var(--good); }
+  .chip .i { width: 14px; height: 14px; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .row-end { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+  .center .row-end { justify-content: center; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+  .hero-art { display: block; width: 100%; height: 72px; margin-bottom: 16px; }
+  .rules { list-style: none; padding: 0; display: grid; gap: 8px; margin: 18px 0 14px; }
+  .rules li { display: flex; align-items: center; gap: 12px; }
+  .rules .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--raised); color: var(--accent-text); flex: none; }
+  .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .keybox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--c); }
+  .caps { display: flex; gap: 4px; }
+  kbd { min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; background: var(--card); color: var(--c); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--raised); border: 1px solid var(--line); }
+  .seg button { height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-2); font-weight: 500; border: 1px solid transparent; transition: background-color .15s var(--ease), color .15s var(--ease); }
+  .seg button.on { background: var(--card); color: var(--text); border-color: var(--line-2); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .tile { padding: 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); text-align: center; color: var(--c); }
+  .tile small { font-size: 13px; font-weight: 500; }
+  .tile b { display: block; margin-top: 4px; font-size: 36px; font-weight: 600; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+  .bar { height: 4px; margin: 16px 0 4px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transform-origin: left; transition: width .3s var(--ease); }
+  .prow { display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .prow:last-child { border-bottom: 0; }
+  .prow .st { width: 18px; display: grid; place-items: center; color: var(--muted); }
+  .prow.done .st { color: var(--good); }
+  .prow.now .st { color: var(--accent-text); }
+  .prow .nm { flex: 1; font-weight: 500; }
+  .prow .sc { color: var(--text-2); font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 14px; }
+  th { padding: 8px; text-align: center; font-weight: 500; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--line-2); }
+  td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  tfoot td { font-weight: 600; border-bottom: 0; }
+  .t1 { color: var(--p1); font-weight: 600; } .t2 { color: var(--p2); font-weight: 600; }
+  .trophy { width: 44px; height: 44px; color: var(--accent-text); stroke-width: 1.5; margin-bottom: 8px; }
+
+  /* ---------- Materi ---------- */
+  .ppt { max-width: 860px; max-height: 94vh; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .ppt-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+  .ppt-head small { color: var(--muted); font-size: 13px; font-weight: 500; }
+  .ppt-head h3 { font-size: 22px; font-weight: 500; line-height: 1.2; }
+  .ppt-tabs { display: flex; gap: 4px; padding: 8px 24px; background: var(--deep); border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .ppt-tabs button { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px; color: var(--text-2); font-weight: 500; white-space: nowrap; border: 1px solid transparent; }
+  .ppt-tabs button.on { background: var(--raised); border-color: var(--line-2); color: var(--text); }
+  .ppt-tabs button:disabled { color: var(--muted); opacity: .6; }
+  .ppt-tabs .i { width: 14px; height: 14px; }
+  .ppt-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: grid; gap: 16px; }
+  .concept { font-size: 17px; color: var(--text-2); }
+  .flow { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .flow li { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
+  .flow b { font-size: 15px; font-weight: 600; color: var(--text); }
+  .flow .n { width: 22px; height: 22px; margin-bottom: 6px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; border: 1px solid var(--line-2); color: var(--accent-text); }
+  .flow li.last { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+  .flow li.last b { color: var(--on-accent); }
+  .flow li.last .n { border-color: rgba(27,19,5,.45); color: var(--on-accent); }
+  .ask { padding: 16px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); }
+  .ask small { display: flex; align-items: center; gap: 6px; color: var(--accent-text); font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .ask p { font-size: 16px; line-height: 1.5; }
+  .srcs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .src { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500; transition: border-color .15s var(--ease); }
+  .src:hover { border-color: var(--text-2); }
+  .src .i { color: var(--accent-text); }
+  .src .ext { margin-left: auto; color: var(--muted); width: 14px; height: 14px; }
+  .ppt-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 24px; border-top: 1px solid var(--line); background: var(--deep); }
+  .nav { display: flex; align-items: center; gap: 8px; }
+  .count { min-width: 44px; text-align: center; color: var(--text-2); font-size: 13px; }
+
+  /* ---------- Responsif ---------- */
+  @media (max-width: 900px) {
+    .opts { grid-template-columns: 1fr; gap: 6px; }
+    .opt { flex-direction: row; justify-content: flex-start; min-height: 48px; padding: 8px 12px; gap: 12px; text-align: left; }
+    .panels { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .top { padding: 8px 12px; gap: 8px; flex-wrap: wrap; }
+    .brand span { display: none; }
+    .step:not(.now) .lbl { display: none; }
+    .step:not(.now) { padding-right: 6px; }
+    .sep { width: 8px; }
+    main { padding: 12px; }
+    .hud { padding: 12px 16px; }
+    .srcs { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: repeat(2, 1fr); }
+    .ppt-body, .ppt-head, .ppt-foot { padding-left: 16px; padding-right: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Ikon -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16h20" stroke="var(--rope)" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M12 16V5l7 3.5L12 12" fill="var(--accent)"/><path d="M12 16V5" stroke="var(--text)" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg>
+      <span>Tarik Tambang</span>
+    </div>
+
+    <nav class="steps" aria-label="Fase permainan">
+      <div id="phaseBadge0" class="step"></div><span class="sep"></span>
+      <div id="phaseBadge1" class="step"></div><span class="sep"></span>
+      <div id="phaseBadge2" class="step"></div>
+    </nav>
+
+    <div class="tools">
+      <button id="btnMenuPause" class="tool" type="button" onclick="openMenuPauseModal()" aria-label="Jeda dan menu" title="Jeda (P)"><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg></button>
+      <button id="btnMute" class="tool" type="button" onclick="toggleMute()" aria-label="Suara" title="Suara"><svg class="i" aria-hidden="true"><use id="muteUse" href="#i-volume"/></svg></button>
+      <button id="btnOpenPptHeader" class="tool" type="button" onclick="openPptModal(state.phaseIndex, true)" aria-label="Materi" title="Materi"><svg class="i" aria-hidden="true"><use id="pptUse" href="#i-lock"/></svg></button>
+      <button id="btnResetHeader" class="tool" type="button" onclick="restartFullGame()" aria-label="Ulang dari awal" title="Ulang"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card arena" aria-label="Arena">
+      <div class="hud">
+        <div class="score p1"><small>Pemain 1</small><b id="p1TotalScore">0</b></div>
+        <div class="timer-wrap">
+          <div class="timer" id="timerBox" role="timer" aria-label="Sisa waktu">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="trk" cx="32" cy="32" r="28"/><circle class="arc" id="timerArc" cx="32" cy="32" r="28"/></svg>
+            <span id="timerDisplay">30</span>
+          </div>
+          <div class="tsub" id="timerStateLabel"></div>
+        </div>
+        <div class="score p2"><small>Pemain 2</small><b id="p2TotalScore">0</b></div>
+      </div>
+
+      <div id="canvasContainer" class="canvas-wrap">
+        <canvas id="tugCanvas" aria-hidden="true"></canvas>
+        <div id="boundaryLockBadge" class="lock hidden"></div>
+        <span id="boxPositionReadout" class="sr-only" aria-live="polite"></span>
+      </div>
+
+      <div id="roundFeedbackBar" class="feed" aria-live="polite"></div>
+    </section>
+
+    <section class="card q" aria-live="polite">
+      <div class="q-meta">
+        <span id="questionSubject">Matematika</span>
+        <span class="pips" id="pips"></span>
+        <span id="questionCount" class="mono">1/5</span>
+      </div>
+      <h2 id="questionText">Siap?</h2>
+    </section>
+
+    <section class="panels">
+      <div class="card panel p1">
+        <div class="panel-head"><h3>Pemain 1</h3><span id="p1StatusPill" class="status">A–E</span></div>
+        <div id="p1Options" class="opts"></div>
+      </div>
+      <div class="card panel p2">
+        <div class="panel-head"><h3>Pemain 2</h3><span id="p2StatusPill" class="status">1–5</span></div>
+        <div id="p2Options" class="opts"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Mulai -->
+<div id="startModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+  <div class="sheet">
+    <svg class="hero-art" viewBox="0 0 440 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <line x1="40" y1="46" x2="400" y2="46" stroke="var(--rope-dark)" stroke-width="7" stroke-linecap="round"/>
+      <line x1="40" y1="46" x2="400" y2="46" stroke="var(--rope)" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 6"/>
+      <line x1="220" y1="46" x2="220" y2="10" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M220 10 242 19 220 28Z" fill="var(--accent)"/>
+      <circle cx="220" cy="46" r="7" fill="var(--accent)"/>
+      <circle cx="22" cy="46" r="18" fill="var(--p1)"/><text x="22" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#10161d">P1</text>
+      <circle cx="418" cy="46" r="18" fill="var(--p2)"/><text x="418" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#1d0f0a">P2</text>
+    </svg>
+    <h2 id="startTitle">Tarik Tambang</h2>
+    <p class="sub">Kuis dua pemain · Kelas 4 SD</p>
+
+    <ul class="rules">
+      <li><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg></span>30 detik per soal</li>
+      <li><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></span>Benar: kotak ke arahmu</li>
+      <li><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></span>Salah atau waktu habis: kotak ke lawan</li>
+      <li><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg></span>Sampai batas: skor fase terkunci</li>
+    </ul>
+
+    <div class="keys">
+      <div class="keybox p1">Pemain 1<span class="caps"><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd><kbd>E</kbd></span></div>
+      <div class="keybox p2">Pemain 2<span class="caps"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd></span></div>
+    </div>
+
+    <button type="button" class="btn primary wide" data-autofocus onclick="startGameNow()">Mulai <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+  </div>
+</div>
+
+<!-- Jeda -->
+<div id="menuPauseModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="pauseTitle">Dijeda</h2>
+      <span class="chip"><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg>Waktu berhenti</span>
+    </div>
+
+    <div class="seg" role="group" aria-label="Tema tampilan">
+      <button type="button" id="btnModeDark" onclick="setThemeMode('dark')"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg>Gelap</button>
+      <button type="button" id="btnModeLight" onclick="setThemeMode('light')"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg>Terang</button>
+    </div>
+
+    <div class="tiles">
+      <div class="tile p1"><small>Pemain 1</small><b id="menuTempScoreP1">0</b></div>
+      <div class="tile p2"><small>Pemain 2</small><b id="menuTempScoreP2">0</b></div>
+    </div>
+
+    <div class="bar"><i id="menuProgressBarFill"></i></div>
+    <div id="menuProgressSummary" class="sub" style="margin:0 0 8px"></div>
+    <div id="menuPhaseChecklist"></div>
+
+    <div class="row-end">
+      <button type="button" class="btn" onclick="restartFullGame()"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Ulang</button>
+      <button type="button" class="btn primary" id="btnResumeGame" data-autofocus onclick="closeMenuPauseModal()"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Lanjut</button>
+    </div>
+  </div>
+</div>
+
+<!-- Akhir fase -->
+<div id="phaseEndModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="phaseEndTitle">
+  <div class="sheet center">
+    <span id="phaseEndBadge" class="chip good"></span>
+    <h2 id="phaseEndTitle" style="margin-top:12px"></h2>
+    <div class="tiles">
+      <div class="tile p1"><small>Pemain 1</small><b id="phaseEndP1Delta">0</b></div>
+      <div class="tile p2"><small>Pemain 2</small><b id="phaseEndP2Delta">0</b></div>
+    </div>
+    <p id="phaseEndSubtitle" class="sub"></p>
+    <div class="row-end">
+      <button type="button" class="btn" onclick="openPptModal(state.phaseIndex, false)"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Materi</button>
+      <button type="button" class="btn primary" id="btnNextPhaseProceed" data-autofocus onclick="advanceToNextPhase()"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Materi -->
+<div id="pptModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pptSlideTitle">
+  <div class="sheet ppt">
+    <div class="ppt-head">
+      <div>
+        <small id="pptHeaderPhase"></small>
+        <h3 id="pptSlideTitle"></h3>
+      </div>
+      <button type="button" class="btn icon-btn" onclick="closePptModal()" aria-label="Tutup materi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="ppt-tabs" id="pptTabs">
+      <button type="button" id="pptTab0" onclick="switchPptPhase(0)"></button>
+      <button type="button" id="pptTab1" onclick="switchPptPhase(1)"></button>
+      <button type="button" id="pptTab2" onclick="switchPptPhase(2)"></button>
+    </div>
+    <div class="ppt-body">
+      <div id="pptVisualDiagram"></div>
+      <p id="pptConceptText" class="concept"></p>
+      <div class="ask">
+        <small><svg class="i" aria-hidden="true"><use href="#i-help"/></svg>Coba pikirkan</small>
+        <p id="pptExerciseQuestion"></p>
+      </div>
+      <div id="pptSourcesList" class="srcs"></div>
+    </div>
+    <div class="ppt-foot">
+      <div class="nav">
+        <button type="button" class="btn icon-btn" id="btnPrevSlide" onclick="changePptSlide(-1)" aria-label="Slide sebelumnya"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+        <span class="count mono" id="pptSlideCounter"></span>
+        <button type="button" class="btn icon-btn" id="btnNextSlide" onclick="changePptSlide(1)" aria-label="Slide berikutnya"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
+      </div>
+      <button type="button" class="btn primary" id="btnPptContinuePhase" onclick="closePptAndContinue()"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Hasil akhir -->
+<div id="gameOverModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+  <div class="sheet center" style="max-width:560px">
+    <svg class="i trophy" aria-hidden="true"><use href="#i-trophy"/></svg>
+    <h2 id="gameOverTitle">Permainan berakhir</h2>
+    <p id="finalWinnerBanner" class="sub" style="font-size:17px;color:var(--text)"></p>
+    <table>
+      <thead><tr><th>Fase</th><th>P1</th><th>P2</th><th>Hasil</th></tr></thead>
+      <tbody id="finalSummaryTableBody"></tbody>
+      <tfoot><tr><td>Total</td><td id="finalTotalP1" class="t1">0</td><td id="finalTotalP2" class="t2">0</td><td id="finalOverallStatus"></td></tr></tfoot>
+    </table>
+    <div class="row-end">
+      <button type="button" class="btn" onclick="openPptModal(0, true)"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Materi</button>
+      <button type="button" class="btn primary" data-autofocus onclick="restartFullGame()"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Main lagi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // =========================================================================
+  // 1. DATA: 3 FASE x 5 SOAL + MATERI
+  // =========================================================================
+  const $ = (id) => document.getElementById(id);
+  const ico = (n) => `<svg class="i" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+  const sgn = (v) => (v > 0 ? `+${v}` : v < 0 ? `−${-v}` : `0`);
+
+  function buildFlow(steps) {
+    return `<ol class="flow">` + steps.map((s, i) =>
+      `<li class="${i === steps.length - 1 ? "last" : ""}"><span class="n">${i + 1}</span><b>${s[0]}</b><span>${s[1]}</span></li>`
+    ).join("") + `</ol>`;
+  }
+
+  const PHASES_DATA = [
+    {
+      name: "Matematika", short: "Matematika",
+      sources: [
+        ["file", "Buku siswa (PDF)", "https://static-sc.cloudapp.web.id/content/pdf/bukuteks/kurikulum21/Matematika-BS-KLS-IV.pdf"],
+        ["video", "Video: Pecahan", "https://www.youtube.com/watch?v=ZiV_8ABe8UQ"],
+        ["image", "Sampul buku", "https://static-sc.cloudapp.web.id/content/image/coverteks/coverkurikulum21/Matematika-BS-KLS-IV-cover.png"]
+      ],
+      questions: [
+        { q: "Hasil dari 245 + 155 - 120 adalah ....", correctValue: "280",
+          p1Options: ["260", "270", "280", "290", "300"], p2Options: ["300", "260", "290", "270", "280"] },
+        { q: "Pecahan di bawah ini yang senilai dengan 2/4 adalah ....", correctValue: "1/2",
+          p1Options: ["1/2", "1/3", "2/3", "3/4", "1/4"], p2Options: ["3/4", "1/3", "1/4", "1/2", "2/3"] },
+        { q: "Bilangan di bawah ini yang merupakan kelipatan dari 7 adalah ....", correctValue: "42",
+          p1Options: ["24", "32", "36", "42", "45"], p2Options: ["36", "42", "45", "24", "32"] },
+        { q: "Sebuah persegi memiliki panjang sisi 9 cm. Keliling persegi tersebut adalah ....", correctValue: "36 cm",
+          p1Options: ["18 cm", "36 cm", "27 cm", "32 cm", "81 cm"], p2Options: ["27 cm", "81 cm", "36 cm", "18 cm", "32 cm"] },
+        { q: "Luas persegi panjang yang memiliki panjang 12 cm dan lebar 5 cm adalah ....", correctValue: "60 cm²",
+          p1Options: ["17 cm²", "34 cm²", "50 cm²", "55 cm²", "60 cm²"], p2Options: ["60 cm²", "50 cm²", "17 cm²", "55 cm²", "34 cm²"] }
+      ],
+      slides: [
+        { title: "Hitung campuran",
+          flow: [["Kenali", "+ dan − setara"], ["Mulai kiri", "Dua bilangan pertama"], ["Lanjut", "Hasil dengan bilangan berikutnya"], ["Cek", "Ratusan, puluhan, satuan"]],
+          concept: "Tambah dan kurang dikerjakan berurutan dari kiri ke kanan.",
+          exercise: "Perpustakaan punya 230 buku, ditambah 140 buku baru, lalu dipinjam 115 buku. Bagaimana urutan menghitung sisanya?" },
+        { title: "Pecahan senilai",
+          flow: [["Amati", "Pembilang dan penyebut"], ["Pilih faktor", "Pengali atau pembagi sama"], ["Operasikan", "Kalikan atau bagi keduanya"], ["Hasil", "Nilai tetap sama"]],
+          concept: "Pecahan senilai punya nilai sama meski angkanya berbeda.",
+          exercise: "Kertas dibagi 6 bagian sama besar dan 3 bagian diarsir (3/6). Bilangan berapa yang membagi pembilang dan penyebut agar jadi paling sederhana?" },
+        { title: "Kelipatan",
+          flow: [["Bilangan pokok", "Loncatan tetap"], ["Kalikan", "1, 2, 3, 4, …"], ["Deret", "n, 2n, 3n, 4n, …"], ["Uji", "Habis dibagi tanpa sisa"]],
+          concept: "Kelipatan adalah hasil kali bilangan itu dengan bilangan asli.",
+          exercise: "Siswa melompat dari 0 dengan jarak 7 tiap lompatan. Bagaimana membuktikan angka 49 terinjak atau tidak?" },
+        { title: "Keliling persegi",
+          flow: [["Ciri", "4 sisi sama panjang"], ["Keliling", "Jumlah sisi tepi"], ["Jumlahkan", "Sisi + sisi + sisi + sisi"], ["Rumus", "K = 4 × sisi"]],
+          concept: "Keliling adalah jumlah panjang semua sisi yang membatasi bangun.",
+          exercise: "Papan catur persegi bersisi 11 cm. Mengapa kelilingnya bisa dihitung dengan 4 × 11 cm?" },
+        { title: "Luas persegi panjang",
+          flow: [["Panjang", "Petak mendatar (p)"], ["Lebar", "Baris menurun (l)"], ["Bidang", "Seluruh permukaan dalam"], ["Rumus", "L = p × l (cm²)"]],
+          concept: "Luas adalah banyaknya petak satuan yang menutupi seluruh permukaan.",
+          exercise: "Buku gambar berukuran panjang 15 cm dan lebar 6 cm. Bagaimana menentukan luasnya dalam cm²?" }
+      ]
+    },
+    {
+      name: "Bahasa Inggris", short: "Inggris",
+      sources: [
+        ["file", "Buku siswa (PDF)", "https://repositori.kemendikdasmen.go.id/25022/1/INGGRIS-BS-KLS%20IV.pdf"],
+        ["video", "Video: Telling time", "https://www.youtube.com/watch?v=d3ulKq-pQ8Q"],
+        ["image", "Sampul buku", "https://static-sc.cloudapp.web.id/content/image/coverteks/coverkurikulum21/Inggris_FN_BS_KLS_IV_Cover.png"]
+      ],
+      questions: [
+        { q: "Bahasa Inggris dari angka 45 adalah ....", correctValue: "Forty-five",
+          p1Options: ["Fourteen", "Forty", "Forty-five", "Fifty-four", "Fifty-five"], p2Options: ["Fifty-four", "Forty-five", "Fourteen", "Fifty-five", "Forty"] },
+        { q: "\"Mother is cooking rice in the ....\" (Ibu sedang memasak nasi di ....)", correctValue: "Kitchen",
+          p1Options: ["Bedroom", "Kitchen", "Bathroom", "Garage", "Garden"], p2Options: ["Garden", "Bedroom", "Garage", "Bathroom", "Kitchen"] },
+        { q: "\"I ... a book in the library every afternoon.\" Kata kerja yang tepat adalah ....", correctValue: "Read",
+          p1Options: ["Sleep", "Swim", "Drink", "Read", "Cook"], p2Options: ["Read", "Cook", "Sleep", "Drink", "Swim"] },
+        { q: "Jam dinding menunjukkan pukul 07.00 tepat. Dalam bahasa Inggris disebut ....", correctValue: "Seven o'clock",
+          p1Options: ["Seven o'clock", "Five o'clock", "Six o'clock", "Eight o'clock", "Nine o'clock"], p2Options: ["Eight o'clock", "Five o'clock", "Nine o'clock", "Seven o'clock", "Six o'clock"] },
+        { q: "Alat transportasi udara (pesawat terbang) dalam bahasa Inggris adalah ....", correctValue: "Airplane",
+          p1Options: ["Train", "Ship", "Bicycle", "Bus", "Airplane"], p2Options: ["Bicycle", "Train", "Airplane", "Ship", "Bus"] }
+      ],
+      slides: [
+        { title: "Angka: -teen dan -ty",
+          flow: [["13–19", "Akhiran -teen"], ["20–90", "Akhiran -ty"], ["Tanda hubung", "Puluhan-satuan"], ["Contoh", "Forty-eight"]],
+          concept: "Belasan berakhiran -teen, puluhan bulat berakhiran -ty.",
+          exercise: "Bandingkan 'Fourteen' (14) dan 'Forty' (40). Bagaimana menulis 48 dan 54 dalam bahasa Inggris?" },
+        { title: "Rooms and activities",
+          flow: [["Subject", "Mother / Father + is"], ["Activity", "cooking, sleeping"], ["Cocokkan", "Kegiatan dengan ruangan"], ["Place", "in the kitchen"]],
+          concept: "Setiap ruangan punya fungsi yang cocok dengan kegiatannya.",
+          exercise: "Father is cooking soup in the .... Ruangan mana yang paling tepat, dan mengapa?" },
+        { title: "Daily activities",
+          flow: [["Subject", "I, you, we, they"], ["Verb", "read, write, swim"], ["Object", "a book, a letter"], ["Place + time", "in the library, every afternoon"]],
+          concept: "Pilih kata kerja yang cocok dengan objek dan tempatnya.",
+          exercise: "Rani and Sinta ... story books in the school library every Tuesday. Kata kerja apa yang sesuai?" },
+        { title: "Telling time",
+          flow: [["Long hand", "Tepat di angka 12"], ["Short hand", "Menunjuk jam"], ["Say the hour", "One, two, … seven"], ["Add o'clock", "It is seven o'clock"]],
+          concept: "Jarum panjang di angka 12: sebut jamnya lalu tambah o'clock.",
+          exercise: "Bel masuk berbunyi pukul 08.00 tepat. Bagaimana menulis waktu itu dalam kalimat bahasa Inggris lengkap?" },
+        { title: "Transportation",
+          flow: [["Land", "Train, bus, car, bicycle"], ["Water", "Ship, boat, ferry"], ["Air", "Airplane, helicopter"], ["Pilih", "Sesuai jalur tempuh"]],
+          concept: "Transportasi dikelompokkan menurut jalurnya: darat, air, udara.",
+          exercise: "Penumpang ingin menyeberang pulau lewat udara dari bandara. Moda apa yang dipakai, dan apa bedanya dengan 'Ship'?" }
+      ]
+    },
+    {
+      name: "IPAS", short: "IPAS",
+      sources: [
+        ["file", "Buku siswa (PDF)", "https://static-sc.cloudapp.web.id/content/pdf/bukuteks/kurikulum21/IPAS_BS_KLS_IV_Rev.pdf"],
+        ["video", "Video: Fotosintesis", "https://www.youtube.com/watch?v=nlXwuNHF8JM"],
+        ["image", "Sampul buku", "https://static-sc.cloudapp.web.id/content/image/coverteks/coverkurikulum21/IPAS_BS_KLS_IV_Rev_Cover.png"]
+      ],
+      questions: [
+        { q: "Bagian tumbuhan yang berfungsi sebagai tempat berlangsungnya fotosintesis adalah ....", correctValue: "Daun",
+          p1Options: ["Akar", "Batang", "Daun", "Biji", "Buah"], p2Options: ["Buah", "Akar", "Biji", "Daun", "Batang"] },
+        { q: "Perubahan wujud benda dari cair menjadi padat (seperti air menjadi es batu) disebut ....", correctValue: "Membeku",
+          p1Options: ["Mencair", "Membeku", "Menguap", "Mengembun", "Menyublim"], p2Options: ["Mengembun", "Menyublim", "Mencair", "Menguap", "Membeku"] },
+        { q: "Buah kelapa yang jatuh dari atas pohon ke tanah terjadi karena tarikan gaya ....", correctValue: "Gravitasi",
+          p1Options: ["Magnet", "Pegas", "Otot", "Gravitasi", "Listrik"], p2Options: ["Gravitasi", "Listrik", "Magnet", "Otot", "Pegas"] },
+        { q: "Pada alat setrika listrik, terjadi perubahan energi listrik menjadi energi ....", correctValue: "Panas",
+          p1Options: ["Panas", "Gerak", "Bunyi", "Cahaya", "Kimia"], p2Options: ["Cahaya", "Gerak", "Panas", "Kimia", "Bunyi"] },
+        { q: "Rumah adat Joglo berasal dari daerah provinsi ....", correctValue: "Jawa Tengah",
+          p1Options: ["Sumatera Barat", "Kalimantan Timur", "Sulawesi Selatan", "Papua", "Jawa Tengah"], p2Options: ["Sulawesi Selatan", "Jawa Tengah", "Sumatera Barat", "Papua", "Kalimantan Timur"] }
+      ],
+      slides: [
+        { title: "Fotosintesis",
+          flow: [["Serap", "Akar menyerap air"], ["Tangkap", "Klorofil menangkap cahaya"], ["Olah", "Air + CO₂ + cahaya"], ["Hasil", "Makanan dan oksigen"]],
+          concept: "Tumbuhan hijau membuat makanan sendiri dengan bantuan cahaya matahari.",
+          exercise: "Apa yang terjadi pada tanaman jika daunnya tertutup debu tebal sehingga tidak menerima cahaya?" },
+        { title: "Perubahan wujud",
+          flow: [["Wujud awal", "Padat, cair, gas"], ["Serap kalor", "Mencair, menguap"], ["Lepas kalor", "Membeku, mengembun"], ["Wujud baru", "Partikel merapat atau renggang"]],
+          concept: "Benda berubah wujud saat menerima atau melepas kalor.",
+          exercise: "Mentega cair didiamkan di ruangan dingin hingga mengeras. Perubahan apa yang terjadi, dan mentega menerima atau melepas kalor?" },
+        { title: "Gaya dan gravitasi",
+          flow: [["Benda", "Berada di ketinggian"], ["Tarikan", "Bumi menarik ke pusatnya"], ["Jatuh", "Bergerak ke bawah"], ["Efek", "Benda tetap di bumi"]],
+          concept: "Gravitasi bumi menarik benda ke arah pusat bumi.",
+          exercise: "Mengapa bola yang dilempar ke atas melambat lalu jatuh lagi, dan gaya apa yang menariknya?" },
+        { title: "Perubahan energi",
+          flow: [["Sumber", "Listrik, kimia, matahari"], ["Alat", "Motor, pemanas, lampu"], ["Ubah", "Sesuai fungsi alat"], ["Hasil", "Panas, gerak, cahaya, bunyi"]],
+          concept: "Energi tidak hilang, hanya berubah bentuk.",
+          exercise: "Bandingkan kipas angin dan pemanggang roti listrik. Apa beda perubahan energi listriknya?" },
+        { title: "Rumah adat",
+          flow: [["Alam", "Kondisi tiap pulau"], ["Struktur", "Tiang, atap, panggung"], ["Identitas", "Joglo, Gadang, Tongkonan, Honai"], ["Warisan", "Kearifan lokal"]],
+          concept: "Setiap provinsi punya rumah adat dengan atap dan tiang khas.",
+          exercise: "Joglo punya empat tiang utama (soko guru) dan atap tinggi di tengah. Dari provinsi mana asalnya, dan mengapa atapnya dibuat begitu?" }
+      ]
+    }
+  ];
+
+  // =========================================================================
+  // 2. STATE
+  // =========================================================================
+  const state = {
+    gameStarted: false, isPaused: false, themeMode: "dark",
+    phaseIndex: 0, questionIndex: 0,
+    boxPosCm: 0, // -10 .. +10, satu langkah = 2.5
+    timeLeft: 30, timerId: null, roundResolving: false,
+    p1Choice: null, p2Choice: null, p1AnswerTimestamp: null, p2AnswerTimestamp: null,
+    currentP1Options: [], currentP2Options: [], currentCorrectVal: "",
+    phaseLocked: false, phaseLockedWinner: 0,
+    phaseCompleted: [false, false, false],
+    phaseScores: [{ p1: null, p2: null }, { p1: null, p2: null }, { p1: null, p2: null }],
+    pptPhaseIndex: 0, pptSlideIndex: 0, pptOpenedFromHeader: false,
+    muted: false, audioCtx: null
+  };
+  const freshScores = () => [{ p1: null, p2: null }, { p1: null, p2: null }, { p1: null, p2: null }];
+
+  function show(id) {
+    const el = $(id);
+    el.classList.remove("hidden");
+    const f = el.querySelector("[data-autofocus]");
+    if (f) f.focus({ preventScroll: true });
+  }
+  function hide(id) { $(id).classList.add("hidden"); }
+
+  // =========================================================================
+  // 3. TEMA & JEDA
+  // =========================================================================
+  function setThemeMode(mode) {
+    state.themeMode = mode === "light" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", state.themeMode);
+    updateThemeButtonsUI();
+    drawCanvas();
+  }
+  function updateThemeButtonsUI() {
+    const dark = state.themeMode === "dark";
+    $("btnModeDark").classList.toggle("on", dark);
+    $("btnModeLight").classList.toggle("on", !dark);
+    $("btnModeDark").setAttribute("aria-pressed", dark);
+    $("btnModeLight").setAttribute("aria-pressed", !dark);
+  }
+
+  function openMenuPauseModal() {
+    state.isPaused = true;
+    $("timerStateLabel").textContent = "Dijeda";
+    renderMenuPauseContent();
+    updateThemeButtonsUI();
+    show("menuPauseModal");
+  }
+  function closeMenuPauseModal() {
+    state.isPaused = false;
+    $("timerStateLabel").textContent = "";
+    hide("menuPauseModal");
+  }
+
+  function renderMenuPauseContent() {
+    const done = state.phaseCompleted.reduce((a, c, i) => a + (c ? 5 : i === state.phaseIndex ? state.questionIndex : 0), 0);
+    $("menuProgressSummary").textContent = `${done} dari 15 soal`;
+    $("menuProgressBarFill").style.width = `${Math.round((done / 15) * 100)}%`;
+
+    let t1 = 0, t2 = 0, html = "";
+    for (let i = 0; i < 3; i++) {
+      const sc = state.phaseScores[i];
+      let cls = "", icon = "lock", right = "";
+      if (sc.p1 !== null) {
+        t1 += sc.p1; t2 += sc.p2;
+        cls = "done"; icon = "check"; right = `${sgn(sc.p1)} · ${sgn(sc.p2)}`;
+      } else if (i === state.phaseIndex) {
+        cls = "now"; icon = "play";
+        if (state.phaseLocked) right = state.phaseLockedWinner === 1 ? "P1 terkunci" : "P2 terkunci";
+        else if (state.boxPosCm < 0) right = "P1 unggul";
+        else if (state.boxPosCm > 0) right = "P2 unggul";
+        else right = "Seimbang";
+      }
+      html += `<div class="prow ${cls}"><span class="st">${ico(icon)}</span><span class="nm">${PHASES_DATA[i].name}</span><span class="sc">${right}</span></div>`;
+    }
+    $("menuPhaseChecklist").innerHTML = html;
+    $("menuTempScoreP1").textContent = sgn(t1);
+    $("menuTempScoreP2").textContent = sgn(t2);
+  }
+
+  // =========================================================================
+  // 4. SUARA
+  // =========================================================================
+  function ensureAudioContext() {
+    if (!state.audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) state.audioCtx = new AC();
+    }
+    if (state.audioCtx && state.audioCtx.state === "suspended") state.audioCtx.resume();
+  }
+  function playSound(type) {
+    if (state.muted) return;
+    try {
+      ensureAudioContext();
+      const ctx = state.audioCtx; if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      if (type === "lock") {
+        osc.type = "sine"; osc.frequency.setValueAtTime(520, now);
+        gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.start(now); osc.stop(now + 0.09);
+      } else if (type === "pullLeft" || type === "pullRight") {
+        const f = type === "pullLeft" ? 440 : 392;
+        osc.type = "triangle"; osc.frequency.setValueAtTime(f, now);
+        osc.frequency.linearRampToValueAtTime(f * 1.33, now + 0.16);
+        gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now); osc.stop(now + 0.18);
+      } else if (type === "phaseEnd") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.12); osc.frequency.setValueAtTime(783.99, now + 0.24);
+        gain.gain.setValueAtTime(0.14, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc.start(now); osc.stop(now + 0.45);
+      }
+    } catch (e) { /* abaikan */ }
+  }
+  function toggleMute() {
+    state.muted = !state.muted;
+    $("muteUse").setAttribute("href", state.muted ? "#i-mute" : "#i-volume");
+    $("btnMute").setAttribute("aria-pressed", state.muted);
+  }
+
+  // =========================================================================
+  // 5. ARENA (CANVAS)
+  // =========================================================================
+  const view = { pos: 0, raf: 0 };
+  const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function drawCanvas() {
+    const wrap = $("canvasContainer"), cv = $("tugCanvas");
+    if (!wrap || !cv) return;
+    const dpr = window.devicePixelRatio || 1;
+    const r = wrap.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawArena(ctx, r.width, r.height);
+  }
+
+  function syncView() {
+    if (reduceMotion()) { view.pos = state.boxPosCm; drawCanvas(); return; }
+    if (view.raf) return;
+    const step = () => {
+      const d = state.boxPosCm - view.pos;
+      if (Math.abs(d) < 0.02) { view.pos = state.boxPosCm; drawCanvas(); view.raf = 0; return; }
+      view.pos += d * 0.14;
+      drawCanvas();
+      view.raf = requestAnimationFrame(step);
+    };
+    view.raf = requestAnimationFrame(step);
+  }
+
+  function drawPuller(ctx, x, gY, rY, away, col, s) {
+    ctx.save();
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.lineWidth = 4 * s; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const hip = { x: x + away * 10 * s, y: gY - 30 * s };
+    const sh = { x: x + away * 22 * s, y: gY - 58 * s };
+    const hand = { x: x - away * 8 * s, y: rY };
+    ctx.beginPath();
+    ctx.moveTo(x - away * 14 * s, gY); ctx.lineTo(hip.x, hip.y); ctx.lineTo(x + away * 4 * s, gY); // kaki
+    ctx.moveTo(hip.x, hip.y); ctx.lineTo(sh.x, sh.y);                                          // badan
+    ctx.moveTo(sh.x, sh.y); ctx.lineTo(hand.x, hand.y);                                        // lengan
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + away * 28 * s, gY - 72 * s, 7 * s, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawArena(ctx, w, h) {
+    const cs = getComputedStyle(document.documentElement);
+    const C = (n) => cs.getPropertyValue(n).trim();
+    ctx.clearRect(0, 0, w, h);
+
+    const s = Math.max(0.62, Math.min(1.1, h / 230));
+    const groundY = h * 0.8;
+    const ropeY = groundY - 46 * s;
+    const padX = Math.max(112, w * 0.15);
+    const tL = padX, tR = w - padX, cx = w / 2, half = (tR - tL) / 2;
+    const xAt = (cm) => cx + (cm / 10) * half;
+    const pos = Math.max(-10, Math.min(10, view.pos));
+
+    // wilayah & tanah
+    ctx.fillStyle = C("--p1-soft"); ctx.fillRect(0, 0, cx, groundY);
+    ctx.fillStyle = C("--p2-soft"); ctx.fillRect(cx, 0, w - cx, groundY);
+    ctx.fillStyle = C("--ground"); ctx.fillRect(0, groundY, w, h - groundY);
+    ctx.fillStyle = C("--line-2"); ctx.fillRect(0, groundY, w, 1);
+
+    // penanda langkah
+    for (let i = -4; i <= 4; i++) {
+      const x = xAt(i * 2.5);
+      ctx.strokeStyle = i === 0 ? C("--accent") : C("--muted");
+      ctx.lineWidth = i === 0 ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(x, groundY + 6); ctx.lineTo(x, groundY + (i === 0 ? 18 : 12)); ctx.stroke();
+    }
+    // garis tengah
+    ctx.save();
+    ctx.strokeStyle = C("--accent"); ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(cx, 10); ctx.lineTo(cx, groundY); ctx.stroke();
+    ctx.restore();
+
+    // tiang batas
+    [[tL, "--p1", "P1"], [tR, "--p2", "P2"]].forEach(([x, col, lbl]) => {
+      ctx.strokeStyle = C(col); ctx.lineWidth = 3; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(x, groundY); ctx.lineTo(x, groundY - 78 * s); ctx.stroke();
+      ctx.fillStyle = C(col); ctx.font = "500 11px 'JetBrains Mono', monospace"; ctx.textAlign = "center";
+      ctx.fillText(lbl, x, groundY - 78 * s - 8);
+    });
+
+    // tali
+    ctx.lineCap = "round";
+    ctx.strokeStyle = C("--rope-dark"); ctx.lineWidth = 7 * s;
+    ctx.beginPath(); ctx.moveTo(10, ropeY); ctx.lineTo(w - 10, ropeY); ctx.stroke();
+    ctx.strokeStyle = C("--rope"); ctx.lineWidth = 3.5 * s; ctx.setLineDash([7 * s, 6 * s]);
+    ctx.beginPath(); ctx.moveTo(10, ropeY); ctx.lineTo(w - 10, ropeY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // pemain
+    const shift = (pos / 10) * 14 * s;
+    const two = w >= 560;
+    const lx = padX - 28 * s + shift, rx = w - padX + 28 * s + shift;
+    drawPuller(ctx, lx, groundY, ropeY, -1, C("--p1"), s);
+    drawPuller(ctx, rx, groundY, ropeY, 1, C("--p2"), s);
+    if (two) {
+      drawPuller(ctx, lx - 34 * s, groundY, ropeY, -1, C("--p1"), s);
+      drawPuller(ctx, rx + 34 * s, groundY, ropeY, 1, C("--p2"), s);
+    }
+
+    // penanda kotak: simpul + bendera
+    const bx = xAt(pos);
+    const flagCol = pos < -0.1 ? C("--p1") : pos > 0.1 ? C("--p2") : C("--accent");
+    const dir = pos < -0.1 ? -1 : 1;
+    ctx.save();
+    ctx.strokeStyle = flagCol; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(bx, ropeY + 8 * s); ctx.lineTo(bx, groundY); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = C("--text"); ctx.lineWidth = 2; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(bx, ropeY); ctx.lineTo(bx, ropeY - 42 * s); ctx.stroke();
+    ctx.fillStyle = flagCol;
+    ctx.beginPath();
+    ctx.moveTo(bx, ropeY - 42 * s); ctx.lineTo(bx + dir * 24 * s, ropeY - 33 * s); ctx.lineTo(bx, ropeY - 24 * s); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx, ropeY, 7.5 * s, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = C("--card"); ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // =========================================================================
+  // 6. TAMPILAN: FASE, SKOR, TIMER, PIP
+  // =========================================================================
+  function updatePhaseBadgesUI() {
+    for (let i = 0; i < 3; i++) {
+      const el = $("phaseBadge" + i);
+      const done = state.phaseCompleted[i], now = i === state.phaseIndex;
+      el.className = "step" + (now ? " now" : done ? " done" : "");
+      el.innerHTML = `<span class="n">${done && !now ? ico("check") : i + 1}</span><span class="lbl">${PHASES_DATA[i].short}</span>`;
+      if (now) el.setAttribute("aria-current", "step"); else el.removeAttribute("aria-current");
+    }
+  }
+
+  function updateScoreboardUI() {
+    let t1 = 0, t2 = 0;
+    state.phaseScores.forEach((s) => { if (s.p1 !== null) { t1 += s.p1; t2 += s.p2; } });
+    $("p1TotalScore").textContent = sgn(t1);
+    $("p2TotalScore").textContent = sgn(t2);
+  }
+
+  function updateBoxReadoutUI() {
+    const steps = Math.round(Math.abs(state.boxPosCm) / 2.5);
+    $("boxPositionReadout").textContent =
+      state.boxPosCm < 0 ? `Kotak ${steps} langkah ke Pemain 1` : state.boxPosCm > 0 ? `Kotak ${steps} langkah ke Pemain 2` : "Kotak di tengah";
+  }
+
+  function renderPips() {
+    let html = "";
+    for (let q = 0; q < 5; q++) {
+      const cls = state.phaseCompleted[state.phaseIndex] || q < state.questionIndex ? "pip done" : q === state.questionIndex ? "pip now" : "pip";
+      html += `<span class="${cls}"></span>`;
+    }
+    $("pips").innerHTML = html;
+  }
+
+  function updateHeaderPptButtonState() {
+    const any = state.phaseCompleted.some(Boolean);
+    $("btnOpenPptHeader").classList.toggle("on", any);
+    $("pptUse").setAttribute("href", any ? "#i-book" : "#i-lock");
+  }
+
+  const ARC = 2 * Math.PI * 28;
+  function updateTimerUI(reset) {
+    const arc = $("timerArc");
+    if (reset) arc.style.transition = "none";
+    arc.style.strokeDasharray = ARC;
+    arc.style.strokeDashoffset = ARC * (1 - state.timeLeft / 30);
+    if (reset) { void arc.getBoundingClientRect(); arc.style.transition = ""; }
+    $("timerDisplay").textContent = state.timeLeft;
+    $("timerBox").classList.toggle("low", state.timeLeft <= 10);
+  }
+
+  function setFeedback(text, hit) {
+    const el = $("roundFeedbackBar");
+    el.textContent = text;
+    el.className = "feed" + (hit ? " hit" : "");
+  }
+  function setPill(n, kind, html) {
+    const el = $("p" + n + "StatusPill");
+    el.className = "status " + kind;
+    el.innerHTML = html;
+  }
+
+  function buildPanels() {
+    [1, 2].forEach((n) => {
+      const keys = n === 1 ? ["A", "B", "C", "D", "E"] : ["1", "2", "3", "4", "5"];
+      $("p" + n + "Options").innerHTML = keys.map((k, i) =>
+        `<button type="button" class="opt" id="p${n}Btn${i}" onclick="handlePlayerAnswer(${n},${i})"><span class="key">${k}</span><span id="p${n}OptText${i}">-</span></button>`
+      ).join("");
+    });
+  }
+
+  // =========================================================================
+  // 7. LOGIKA KUIS (1 GERAKAN PER SOAL)
+  // =========================================================================
+  function shuffleGuaranteedDifferent(correctValue, o1, o2) {
+    const p1 = [...o1], p2 = [...o2];
+    if (p1.indexOf(correctValue) === p2.indexOf(correctValue)) { const t = p2[0]; p2[0] = p2[4]; p2[4] = t; }
+    return { p1, p2 };
+  }
+
+  function resetGameState() {
+    clearInterval(state.timerId);
+    state.gameStarted = true; state.isPaused = false;
+    state.phaseIndex = 0;
+    state.phaseCompleted = [false, false, false];
+    state.phaseScores = freshScores();
+    updateHeaderPptButtonState();
+    updateScoreboardUI();
+  }
+
+  function startGameNow() {
+    ensureAudioContext();
+    hide("startModal");
+    resetGameState();
+    startPhase(0);
+  }
+
+  function restartFullGame() {
+    ["menuPauseModal", "phaseEndModal", "gameOverModal", "pptModal", "startModal"].forEach(hide);
+    $("timerStateLabel").textContent = "";
+    resetGameState();
+    startPhase(0);
+  }
+
+  function startPhase(idx) {
+    clearInterval(state.timerId);
+    state.phaseIndex = idx; state.questionIndex = 0;
+    state.boxPosCm = 0; view.pos = 0;
+    cancelAnimationFrame(view.raf); view.raf = 0;
+    state.phaseLocked = false; state.phaseLockedWinner = 0;
+    $("boundaryLockBadge").classList.add("hidden");
+    updatePhaseBadgesUI();
+    updateBoxReadoutUI();
+    drawCanvas();
+    loadCurrentQuestion();
+  }
+
+  function loadCurrentQuestion() {
+    clearInterval(state.timerId);
+    const phase = PHASES_DATA[state.phaseIndex];
+    const qObj = phase.questions[state.questionIndex];
+
+    state.roundResolving = false;
+    state.p1Choice = state.p2Choice = null;
+    state.p1AnswerTimestamp = state.p2AnswerTimestamp = null;
+    state.timeLeft = 30;
+    state.currentCorrectVal = qObj.correctValue;
+    const sh = shuffleGuaranteedDifferent(qObj.correctValue, qObj.p1Options, qObj.p2Options);
+    state.currentP1Options = sh.p1; state.currentP2Options = sh.p2;
+
+    $("questionSubject").textContent = phase.name;
+    $("questionCount").textContent = `${state.questionIndex + 1}/5`;
+    $("questionText").textContent = qObj.q;
+    renderPips();
+
+    for (let i = 0; i < 5; i++) {
+      [1, 2].forEach((n) => {
+        const b = $("p" + n + "Btn" + i);
+        b.disabled = false; b.className = "opt";
+        $("p" + n + "OptText" + i).textContent = (n === 1 ? sh.p1 : sh.p2)[i];
+      });
+    }
+    setPill(1, "", "A–E");
+    setPill(2, "", "1–5");
+    setFeedback("Jawab sebelum waktu habis", false);
+    updateTimerUI(true);
+
+    state.timerId = setInterval(() => {
+      if (state.isPaused) return;
+      state.timeLeft -= 1;
+      updateTimerUI(false);
+      if (state.timeLeft <= 0) { clearInterval(state.timerId); resolveSimultaneousQuestion(); }
+    }, 1000);
+  }
+
+  function handlePlayerAnswer(player, idx) {
+    if (!state.gameStarted || state.isPaused || state.roundResolving) return;
+    const key = player === 1 ? "p1Choice" : "p2Choice";
+    if (state[key] !== null) return;
+    state[key] = idx;
+    state[player === 1 ? "p1AnswerTimestamp" : "p2AnswerTimestamp"] = performance.now();
+    playSound("lock");
+    for (let i = 0; i < 5; i++) {
+      const b = $("p" + player + "Btn" + i);
+      b.disabled = true;
+      b.className = "opt " + (i === idx ? "picked" : "dim");
+    }
+    setPill(player, "on", ico("check") + "Terkunci");
+    if (state.p1Choice !== null && state.p2Choice !== null) {
+      clearInterval(state.timerId);
+      resolveSimultaneousQuestion();
+    }
+  }
+
+  function applySingleStepMovement(delta) {
+    if (delta === 0) return;
+    state.boxPosCm = Math.max(-10, Math.min(10, state.boxPosCm + delta));
+    updateBoxReadoutUI();
+    syncView();
+    if (!state.phaseLocked && Math.abs(state.boxPosCm) >= 10) {
+      state.phaseLocked = true;
+      state.phaseLockedWinner = state.boxPosCm <= -10 ? 1 : 2;
+      const b = $("boundaryLockBadge");
+      b.innerHTML = `${ico("lock")}${state.phaseLockedWinner === 1 ? "P1 +1 · P2 −1" : "P1 −1 · P2 +1"}`;
+      b.classList.remove("hidden");
+    }
+  }
+
+  function resolveSimultaneousQuestion() {
+    if (state.roundResolving) return;
+    state.roundResolving = true;
+
+    const p1Val = state.p1Choice !== null ? state.currentP1Options[state.p1Choice] : null;
+    const p2Val = state.p2Choice !== null ? state.currentP2Options[state.p2Choice] : null;
+    const p1Ok = p1Val === state.currentCorrectVal;
+    const p2Ok = p2Val === state.currentCorrectVal;
+
+    for (let i = 0; i < 5; i++) {
+      const b1 = $("p1Btn" + i), b2 = $("p2Btn" + i);
+      b1.disabled = true; b2.disabled = true;
+      if (i === state.p1Choice) b1.className = "opt " + (p1Ok ? "right" : "wrong");
+      if (i === state.p2Choice) b2.className = "opt " + (p2Ok ? "right" : "wrong");
+    }
+    const pill = (n, choice, ok) =>
+      choice === null ? setPill(n, "bad", ico("clock") + "Habis") : ok ? setPill(n, "good", ico("check") + "Benar") : setPill(n, "bad", ico("x") + "Salah");
+    pill(1, state.p1Choice, p1Ok);
+    pill(2, state.p2Choice, p2Ok);
+
+    // Aturan: tepat satu langkah per soal.
+    const t1 = state.p1AnswerTimestamp, t2 = state.p2AnswerTimestamp;
+    const bothTimed = t1 !== null && t2 !== null;
+    let delta = 0, msg = "";
+    if (p1Ok && !p2Ok) { delta = -2.5; msg = "P1 benar. Kotak ke P1."; }
+    else if (p2Ok && !p1Ok) { delta = 2.5; msg = "P2 benar. Kotak ke P2."; }
+    else if (p1Ok && p2Ok) {
+      if (bothTimed && t1 < t2) { delta = -2.5; msg = "Dua-duanya benar, P1 lebih cepat. Kotak ke P1."; }
+      else if (bothTimed && t2 < t1) { delta = 2.5; msg = "Dua-duanya benar, P2 lebih cepat. Kotak ke P2."; }
+      else msg = "Dua-duanya benar bersamaan. Kotak tetap.";
+    } else {
+      if (state.p1Choice !== null && state.p2Choice === null) { delta = 2.5; msg = "Dua-duanya salah, P1 lebih dulu. Kotak ke P2."; }
+      else if (state.p2Choice !== null && state.p1Choice === null) { delta = -2.5; msg = "Dua-duanya salah, P2 lebih dulu. Kotak ke P1."; }
+      else if (bothTimed && t1 < t2) { delta = 2.5; msg = "Dua-duanya salah, P1 lebih dulu. Kotak ke P2."; }
+      else if (bothTimed && t2 < t1) { delta = -2.5; msg = "Dua-duanya salah, P2 lebih dulu. Kotak ke P1."; }
+      else msg = "Waktu habis. Kotak tetap.";
+    }
+
+    applySingleStepMovement(delta);
+    if (delta < 0) playSound("pullLeft"); else if (delta > 0) playSound("pullRight");
+    setFeedback(msg, true);
+
+    setTimeout(() => {
+      if (state.questionIndex < 4) { state.questionIndex += 1; loadCurrentQuestion(); }
+      else finishCurrentPhase();
+    }, 1500);
+  }
+
+  function finishCurrentPhase() {
+    clearInterval(state.timerId);
+    playSound("phaseEnd");
+    state.phaseCompleted[state.phaseIndex] = true;
+    updateHeaderPptButtonState();
+    updatePhaseBadgesUI();
+    renderPips();
+
+    let a = 0, b = 0, reason = "";
+    if (state.phaseLocked) {
+      if (state.phaseLockedWinner === 1) { a = 1; b = -1; reason = "Kotak menyentuh batas P1"; }
+      else { a = -1; b = 1; reason = "Kotak menyentuh batas P2"; }
+    } else if (state.boxPosCm < 0) { a = 1; b = -1; reason = "Kotak berhenti di wilayah P1"; }
+    else if (state.boxPosCm > 0) { a = -1; b = 1; reason = "Kotak berhenti di wilayah P2"; }
+    else reason = "Kotak berhenti di tengah";
+
+    state.phaseScores[state.phaseIndex] = { p1: a, p2: b };
+    updateScoreboardUI();
+
+    const n = state.phaseIndex + 1;
+    $("phaseEndBadge").innerHTML = `${ico("check")}Fase ${n} selesai`;
+    $("phaseEndTitle").textContent = PHASES_DATA[state.phaseIndex].name;
+    $("phaseEndSubtitle").textContent = reason;
+    $("phaseEndP1Delta").textContent = sgn(a);
+    $("phaseEndP2Delta").textContent = sgn(b);
+    $("btnNextPhaseProceed").innerHTML = state.phaseIndex < 2
+      ? `Fase ${n + 1}: ${PHASES_DATA[n].short}${ico("arrow")}`
+      : `Hasil akhir${ico("arrow")}`;
+    show("phaseEndModal");
+  }
+
+  function advanceToNextPhase() {
+    hide("phaseEndModal");
+    if (state.phaseIndex < 2) startPhase(state.phaseIndex + 1);
+    else showFinalGameOverModal();
+  }
+
+  function showFinalGameOverModal() {
+    let t1 = 0, t2 = 0, rows = "";
+    for (let i = 0; i < 3; i++) {
+      const sc = state.phaseScores[i];
+      const a = sc.p1 ?? 0, b = sc.p2 ?? 0;
+      t1 += a; t2 += b;
+      rows += `<tr><td>${PHASES_DATA[i].name}</td><td class="t1">${sgn(a)}</td><td class="t2">${sgn(b)}</td><td>${a > b ? "P1 menang" : b > a ? "P2 menang" : "Seri"}</td></tr>`;
+    }
+    $("finalSummaryTableBody").innerHTML = rows;
+    $("finalTotalP1").textContent = sgn(t1);
+    $("finalTotalP2").textContent = sgn(t2);
+    $("finalWinnerBanner").textContent = t1 > t2 ? "Pemenang: Pemain 1" : t2 > t1 ? "Pemenang: Pemain 2" : "Hasil seri";
+    $("finalOverallStatus").textContent = t1 > t2 ? "P1" : t2 > t1 ? "P2" : "Seri";
+    show("gameOverModal");
+  }
+
+  // =========================================================================
+  // 8. MATERI (TERBUKA BERURUTAN)
+  // =========================================================================
+  function isPhaseMaterialAccessible(i) {
+    return state.phaseCompleted[i];
+  }
+
+  function openPptModal(phaseIdx, fromHeader) {
+    if (fromHeader) {
+      const last = state.phaseCompleted.lastIndexOf(true);
+      if (last === -1) { setFeedback("Materi terbuka setelah satu fase selesai", true); return; }
+      state.pptPhaseIndex = last;
+    } else state.pptPhaseIndex = phaseIdx;
+    state.pptSlideIndex = 0;
+    state.pptOpenedFromHeader = !!fromHeader;
+    renderPptSlide();
+    show("pptModal");
+  }
+
+  function switchPptPhase(i) {
+    if (!isPhaseMaterialAccessible(i)) return;
+    state.pptPhaseIndex = i; state.pptSlideIndex = 0;
+    renderPptSlide();
+  }
+
+  function changePptSlide(d) {
+    const n = state.pptSlideIndex + d;
+    if (n >= 0 && n < PHASES_DATA[state.pptPhaseIndex].slides.length) { state.pptSlideIndex = n; renderPptSlide(); }
+  }
+
+  function renderPptSlide() {
+    const phase = PHASES_DATA[state.pptPhaseIndex];
+    const slide = phase.slides[state.pptSlideIndex];
+
+    for (let i = 0; i < 3; i++) {
+      const tab = $("pptTab" + i), ok = isPhaseMaterialAccessible(i), cur = i === state.pptPhaseIndex;
+      tab.className = cur ? "on" : "";
+      tab.disabled = !ok;
+      tab.innerHTML = `${ico(ok ? (cur ? "book" : "check") : "lock")}${PHASES_DATA[i].name}`;
+    }
+    $("pptHeaderPhase").textContent = `Fase ${state.pptPhaseIndex + 1} · ${phase.name}`;
+    $("pptSlideTitle").textContent = slide.title;
+    $("pptSlideCounter").textContent = `${state.pptSlideIndex + 1}/${phase.slides.length}`;
+    $("pptVisualDiagram").innerHTML = buildFlow(slide.flow);
+    $("pptConceptText").textContent = slide.concept;
+    $("pptExerciseQuestion").textContent = slide.exercise;
+
+    $("pptSourcesList").innerHTML = phase.sources.map((s) =>
+      `<a class="src" href="${s[2]}" target="_blank" rel="noopener noreferrer">${ico(s[0])}<span>${s[1]}</span>${ico("ext").replace('class="i"', 'class="i ext"')}</a>`
+    ).join("");
+
+    $("btnPrevSlide").disabled = state.pptSlideIndex === 0;
+    $("btnNextSlide").disabled = state.pptSlideIndex === phase.slides.length - 1;
+
+    const c = $("btnPptContinuePhase");
+    if (state.pptOpenedFromHeader) c.innerHTML = "Tutup";
+    else if (state.phaseIndex < 2) c.innerHTML = `Fase ${state.phaseIndex + 2}${ico("arrow")}`;
+    else c.innerHTML = `Hasil akhir${ico("arrow")}`;
+  }
+
+  function closePptModal() { hide("pptModal"); }
+  function closePptAndContinue() {
+    hide("pptModal");
+    if (!state.pptOpenedFromHeader) advanceToNextPhase();
+  }
+
+  // =========================================================================
+  // 9. KEYBOARD: P1 (A–E), P2 (1–5), JEDA (Esc / P)
+  // =========================================================================
+  window.addEventListener("keydown", (e) => {
+    const open = (id) => !$(id).classList.contains("hidden");
+    const startOpen = open("startModal"), phaseOpen = open("phaseEndModal"), pptOpen = open("pptModal"), overOpen = open("gameOverModal"), menuOpen = open("menuPauseModal");
+    const k = e.key.toUpperCase();
+
+    if (pptOpen) {
+      if (e.key === "Escape") closePptModal();
+      else if (e.key === "ArrowLeft") changePptSlide(-1);
+      else if (e.key === "ArrowRight") changePptSlide(1);
+      return;
+    }
+    if ((e.key === "Escape" || k === "P") && !startOpen && !phaseOpen && !overOpen) {
+      e.preventDefault();
+      menuOpen ? closeMenuPauseModal() : openMenuPauseModal();
+      return;
+    }
+    if (!state.gameStarted || state.isPaused || state.roundResolving) return;
+    if (startOpen || phaseOpen || overOpen || menuOpen) return;
+
+    const m1 = { A: 0, B: 1, C: 2, D: 3, E: 4 }, m2 = { "1": 0, "2": 1, "3": 2, "4": 3, "5": 4 };
+    if (k in m1) { e.preventDefault(); handlePlayerAnswer(1, m1[k]); }
+    else if (k in m2) { e.preventDefault(); handlePlayerAnswer(2, m2[k]); }
+  });
+
+  window.addEventListener("resize", drawCanvas);
+
+  window.addEventListener("load", () => {
+    buildPanels();
+    updateThemeButtonsUI();
+    updatePhaseBadgesUI();
+    updateHeaderPptButtonState();
+    updateScoreboardUI();
+    updateBoxReadoutUI();
+    renderPips();
+    updateTimerUI(true);
+    drawCanvas();
+    document.querySelector("#startModal [data-autofocus]").focus({ preventScroll: true });
+  });
+</script>
+</body>
+</html>
